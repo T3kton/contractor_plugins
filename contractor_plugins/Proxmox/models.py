@@ -40,7 +40,7 @@ class ProxmoxComplex( Complex ):
     return 'Proxmox'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     if self.proxmox_password == '_VAULT_':
       creds = self.proxmox_username
 
@@ -152,7 +152,7 @@ class ProxmoxFoundation( Foundation ):
   def complex( self ):
     return self.proxmox_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return ProxmoxFoundation.objects.filter( site=site )

@@ -29,7 +29,7 @@ class DockerComplex( Complex ):
     return 'Docker'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     return {
               'host': self.members.get().primary_address.ip_address
             }
@@ -131,7 +131,7 @@ class DockerFoundation( Foundation ):
   def complex( self ):
     return self.docker_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return DockerFoundation.objects.filter( site=site )

@@ -66,7 +66,7 @@ class RedFishFoundation( Foundation ):  # , Networked ):
     return 'RedFish'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     if self.redfish_password == '_VAULT_':
       creds = self.redfish_username
 
@@ -85,7 +85,7 @@ class RedFishFoundation( Foundation ):  # , Networked ):
   def class_list( self ):
     return [ 'Physical', 'RedFish' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return RedFishFoundation.objects.filter( site=site )

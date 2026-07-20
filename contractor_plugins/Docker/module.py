@@ -1,6 +1,6 @@
 import re
 
-from contractor.tscript.runner import ExternalFunction, ParamaterError
+from contractor.tscript.runner import ExternalFunction, ParameterError
 from contractor.Utilities.models import Address
 
 
@@ -11,11 +11,11 @@ NAME_REGEX = re.compile( r'^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.connection_paramaters = {}
+    self.connection_parameters = {}
     self.complete = False
     self.docker_id = None
     self.in_rollback = False
-    self.docker_paramaters = {}
+    self.docker_parameters = {}
 
   @property
   def done( self ):
@@ -43,29 +43,29 @@ class create( ExternalFunction ):
     try:
       container_spec = parms[ 'container_spec' ]
     except KeyError:
-      raise ParamaterError( 'container_spec', 'required' )
+      raise ParameterError( 'container_spec', 'required' )
 
     try:
       port_map = parms[ 'port_map' ]
     except KeyError:
-      raise ParamaterError( 'port_map', 'required' )
+      raise ParameterError( 'port_map', 'required' )
 
     try:
       name = self.getScriptValue( 'foundation', 'locator' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
     if not NAME_REGEX.match( name ):
-      raise ParamaterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
+      raise ParameterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
 
     try:
       docker_complex = self.getScriptValue( 'foundation', 'docker_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_complex: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation docker_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = docker_complex.connection_paramaters
+    self.connection_parameters = docker_complex.connection_parameters
 
-    self.docker_paramaters = {
+    self.docker_parameters = {
                                'name': name,
                                'docker_image': container_spec[ 'image' ],
                                'port_map': port_map,
@@ -74,13 +74,13 @@ class create( ExternalFunction ):
                               }
 
   def toSubcontractor( self ):
-    paramaters = self.docker_paramaters.copy()
-    paramaters.update( { 'connection': self.connection_paramaters } )
+    parameters = self.docker_parameters.copy()
+    parameters.update( { 'connection': self.connection_parameters } )
 
     if self.in_rollback:
-      return ( 'create_rollback', paramaters )
+      return ( 'create_rollback', parameters )
     else:
-      return ( 'create', paramaters )
+      return ( 'create', parameters )
 
   def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
@@ -93,14 +93,14 @@ class create( ExternalFunction ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.complete, self.in_rollback, self.docker_id, self.docker_paramaters )
+    return ( self.connection_parameters, self.complete, self.in_rollback, self.docker_id, self.docker_parameters )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.complete = state[1]
     self.in_rollback = state[2]
     self.docker_id = state[3]
-    self.docker_paramaters = state[4]
+    self.docker_parameters = state[4]
 
 
 # other functions used by the virtualbox foundation
@@ -109,7 +109,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.connection_paramaters = foundation.docker_complex.connection_paramaters
+    self.connection_parameters = foundation.docker_complex.connection_parameters
     self.complete = None
 
   @property
@@ -124,16 +124,16 @@ class destroy( ExternalFunction ):
       return 'Waiting for Container Destruction'
 
   def toSubcontractor( self ):
-    return ( 'destroy', { 'connection': self.connection_paramaters, 'docker_id': self.docker_id, 'name': self.name } )
+    return ( 'destroy', { 'connection': self.connection_parameters, 'docker_id': self.docker_id, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.complete = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.complete, self.docker_id, self.name )
+    return ( self.connection_parameters, self.complete, self.docker_id, self.name )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.complete = state[1]
     self.docker_id = state[2]
     self.name = state[3]
@@ -195,7 +195,7 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.connection_paramaters = foundation.docker_complex.connection_paramaters
+    self.connection_parameters = foundation.docker_complex.connection_parameters
     self.desired_state = state
     self.curent_state = None
     self.sent = False
@@ -215,17 +215,17 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
     self.curent_state = None
 
   def toSubcontractor( self ):
-    return ( 'start_stop', { 'connection': self.connection_paramaters, 'state': self.desired_state, 'docker_id': self.docker_id, 'name': self.name, 'sent': self.sent } )
+    return ( 'start_stop', { 'connection': self.connection_parameters, 'state': self.desired_state, 'docker_id': self.docker_id, 'name': self.name, 'sent': self.sent } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
     self.sent = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.docker_id, self.name, self.desired_state, self.curent_state, self.sent )
+    return ( self.connection_parameters, self.docker_id, self.name, self.desired_state, self.curent_state, self.sent )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.docker_id = state[1]
     self.name = state[2]
     self.desired_state = state[3]
@@ -238,7 +238,7 @@ class state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.connection_paramaters = foundation.docker_complex.connection_paramaters
+    self.connection_parameters = foundation.docker_complex.connection_parameters
     self.state = None
 
   @property
@@ -257,16 +257,16 @@ class state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'state', { 'connection': self.connection_paramaters, 'docker_id': self.docker_id, 'name': self.name } )
+    return ( 'state', { 'connection': self.connection_parameters, 'docker_id': self.docker_id, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.docker_id, self.state, self.name )
+    return ( self.connection_parameters, self.docker_id, self.state, self.name )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.docker_id = state[1]
     self.state = state[2]
     self.name = state[3]

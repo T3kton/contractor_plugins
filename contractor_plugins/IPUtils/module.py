@@ -1,4 +1,4 @@
-from contractor.tscript.runner import ExternalFunction, ParamaterError
+from contractor.tscript.runner import ExternalFunction, ParameterError
 
 
 class ping( ExternalFunction ):
@@ -27,15 +27,15 @@ class ping( ExternalFunction ):
     try:
       self.target = parms[ 'target' ]
     except KeyError:
-      raise ParamaterError( 'target', 'required' )
+      raise ParameterError( 'target', 'required' )
 
     if self.target is None:
-      raise ParamaterError( 'target', 'is None' )
+      raise ParameterError( 'target', 'is None' )
 
     try:
       self.count = int( parms.get( 'count', 5 ) )
     except ( ValueError, TypeError ):
-      raise ParamaterError( 'count', 'must be an integer' )
+      raise ParameterError( 'count', 'must be an integer' )
 
   def toSubcontractor( self ):
     return ( 'ping', { 'target': self.target, 'count': self.count } )
@@ -69,15 +69,15 @@ class waitForPort( ExternalFunction ):
     try:
       self.target = parms[ 'target' ]
     except KeyError:
-      raise ParamaterError( 'target', 'required' )
+      raise ParameterError( 'target', 'required' )
 
     if self.target is None:
-      raise ParamaterError( 'target', 'is None' )
+      raise ParameterError( 'target', 'is None' )
 
     try:
       self.port = int( parms[ 'port' ] )
     except ( ValueError, TypeError, KeyError ):
-      raise ParamaterError( 'count', 'is required and must be an integer' )
+      raise ParameterError( 'count', 'is required and must be an integer' )
 
   def toSubcontractor( self ):
     return ( 'port_state', { 'target': self.target, 'port': self.port } )
@@ -98,15 +98,15 @@ def _snmpSetup( obj, parms ):
   try:
     obj.host = parms[ 'host' ]
   except KeyError:
-    raise ParamaterError( 'host', 'required' )
+    raise ParameterError( 'host', 'required' )
 
   if obj.host is None:
-    raise ParamaterError( 'host', 'is None' )
+    raise ParameterError( 'host', 'is None' )
 
   try:
     obj.protocol = parms[ 'protocol' ]
     if obj.protocol not in ( 'SNMPv1', 'SNMPv2c', 'SNMPv3' ):
-      raise ParamaterError( 'protocol', 'invalid' )
+      raise ParameterError( 'protocol', 'invalid' )
   except KeyError:
     obj.protocol = 'SNMPv2c'
 
@@ -115,10 +115,10 @@ def _snmpSetup( obj, parms ):
     try:
       creds[ 'user' ] = parms[ 'user' ]
     except KeyError:
-      raise ParamaterError( 'user', 'required' )
+      raise ParameterError( 'user', 'required' )
 
     if creds[ 'user' ] is None:
-      raise ParamaterError( 'user', 'is None' )
+      raise ParameterError( 'user', 'is None' )
 
     for name in ( 'auth_key', 'priv_key' ):
       try:
@@ -130,20 +130,20 @@ def _snmpSetup( obj, parms ):
     try:
       creds[ 'community' ] = parms[ 'community' ]
     except KeyError:
-      raise ParamaterError( 'community', 'required' )
+      raise ParameterError( 'community', 'required' )
 
     if creds[ 'community' ] is None:
-      raise ParamaterError( 'community', 'is None' )
+      raise ParameterError( 'community', 'is None' )
 
   obj.creds = creds
 
   try:
     obj.oid = parms[ 'oid' ]
   except KeyError:
-    raise ParamaterError( 'oid', 'required' )
+    raise ParameterError( 'oid', 'required' )
 
   if obj.oid is None:
-    raise ParamaterError( 'oid', 'is None' )
+    raise ParameterError( 'oid', 'is None' )
 
 
 class snmpGet( ExternalFunction ):
@@ -217,7 +217,7 @@ class snmpSet( ExternalFunction ):
     try:
       self.new_value = parms[ 'value' ]
     except KeyError:
-      raise ParamaterError( 'value', 'required' )
+      raise ParameterError( 'value', 'required' )
 
   def toSubcontractor( self ):
     return ( 'snmp_set', { 'connection': { 'host': self.host, 'protocol': self.protocol, 'creds': self.creds }, 'oid': self.oid, 'value': self.new_value } )

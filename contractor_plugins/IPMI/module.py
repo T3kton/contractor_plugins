@@ -6,7 +6,7 @@ MAX_POWER_SET_ATTEMPTS = 5
 class link_test( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.connection_paramaters = foundation.connection_paramaters
+    self.connection_parameters = foundation.connection_parameters
     self.count = 20
     self.scaler = 0.85
     self.threshold = 0.8
@@ -29,16 +29,16 @@ class link_test( ExternalFunction ):
     return self.score >= self.threshold
 
   def toSubcontractor( self ):
-    return ( 'link_test', { 'connection': self.connection_paramaters, 'count': self.count, 'scaler': self.scaler, 'threshold': self.threshold, 'delay': self.delay } )
+    return ( 'link_test', { 'connection': self.connection_parameters, 'count': self.count, 'scaler': self.scaler, 'threshold': self.threshold, 'delay': self.delay } )
 
   def fromSubcontractor( self, data ):
     self.score = data[ 'score' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.count, self.scaler, self.threshold, self.delay, self.score )
+    return ( self.connection_parameters, self.count, self.scaler, self.threshold, self.delay, self.score )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.count = state[1]
     self.scaler = state[2]
     self.threshold = state[3]
@@ -49,7 +49,7 @@ class link_test( ExternalFunction ):
 class set_power( ExternalFunction ):
   def __init__( self, foundation, state, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.connection_paramaters = foundation.connection_paramaters
+    self.connection_parameters = foundation.connection_parameters
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -73,18 +73,18 @@ class set_power( ExternalFunction ):
   def toSubcontractor( self ):
     self.counter += 1
     if self.desired_state == 'off' and self.counter < 3:  # the first two times, do it nicely, after that, the hard way
-      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': 'shutdown' } )
+      return ( 'set_power', { 'connection': self.connection_parameters, 'state': 'shutdown' } )
     else:
-      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': self.desired_state } )
+      return ( 'set_power', { 'connection': self.connection_parameters, 'state': self.desired_state } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.desired_state, self.curent_state, self.counter )
+    return ( self.connection_parameters, self.desired_state, self.curent_state, self.counter )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.desired_state = state[1]
     self.curent_state = state[2]
     self.counter = state[3]
@@ -93,7 +93,7 @@ class set_power( ExternalFunction ):
 class power_state( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.connection_paramaters = foundation.connection_paramaters
+    self.connection_parameters = foundation.connection_parameters
     self.state = None
 
   @property
@@ -112,23 +112,23 @@ class power_state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'connection': self.connection_paramaters } )
+    return ( 'power_state', { 'connection': self.connection_parameters } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.state )
+    return ( self.connection_parameters, self.state )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.state = state[1]
 
 
 class wait_for_poweroff( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.connection_paramaters = foundation.connection_paramaters
+    self.connection_parameters = foundation.connection_parameters
     self.curent_state = None
 
   @property
@@ -140,16 +140,16 @@ class wait_for_poweroff( ExternalFunction ):
     return 'Waiting for Power off, curently "{0}"'.format( self.curent_state )
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'connection': self.connection_paramaters } )
+    return ( 'power_state', { 'connection': self.connection_parameters } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.curent_state )
+    return ( self.connection_parameters, self.curent_state )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.curent_state = state[1]
 
 

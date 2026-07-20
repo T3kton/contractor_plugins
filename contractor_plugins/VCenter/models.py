@@ -46,7 +46,7 @@ class VCenterComplex( Complex ):
     return 'VCenter'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     if self.vcenter_password == '_VAULT_':
       creds = self.vcenter_username
 
@@ -196,7 +196,7 @@ class VCenterFoundation( Foundation ):
   def complex( self ):
     return self.vcenter_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return VCenterFoundation.objects.filter( site=site )

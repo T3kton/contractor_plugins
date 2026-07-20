@@ -38,7 +38,7 @@ class LibVirtComplex( Complex ):
     return 'LibVirt'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     return { 'host': self.members.get().primary_address.ip_address }
 
   def newFoundation( self, hostname, site ):
@@ -147,7 +147,7 @@ class LibVirtFoundation( Foundation ):
   def complex( self ):
     return self.libvirt_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return LibVirtFoundation.objects.filter( site=site )

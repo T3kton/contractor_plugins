@@ -1,7 +1,7 @@
 import re
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
-from contractor.tscript.runner import ExternalFunction, ParamaterError
+from contractor.tscript.runner import ExternalFunction, ParameterError
 
 from contractor.Utilities.models import ipAddress2Native, Address
 
@@ -17,7 +17,7 @@ class create( ExternalFunction ):
     self.interface_list = []
     self.ip_address_map = {}
     self.in_rollback = False
-    self.instance_paramaters = {}
+    self.instance_parameters = {}
 
   @property
   def done( self ):
@@ -45,22 +45,22 @@ class create( ExternalFunction ):
     try:
       instance_type = self.getScriptValue( 'config', 'awsec2_type' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get awsec2_type: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get awsec2_type: {0}'.format( e ) )
 
     try:
       image_id = self.getScriptValue( 'config', 'awsec2_image_id' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get awsec2_image_id: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get awsec2_image_id: {0}'.format( e ) )
 
     try:
       name = self.getScriptValue( 'foundation', 'locator' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
     if not NAME_REGEX.match( name ):
-      raise ParamaterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
+      raise ParameterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
 
-    self.instance_paramaters = {
+    self.instance_parameters = {
                                  'name': name,
                                  'image_id': image_id,
                                  'instance_type': instance_type,
@@ -69,9 +69,9 @@ class create( ExternalFunction ):
 
   def toSubcontractor( self ):
     if self.in_rollback:
-      return ( 'create_rollback', self.instance_paramaters )
+      return ( 'create_rollback', self.instance_parameters )
     else:
-      return ( 'create', self.instance_paramaters )
+      return ( 'create', self.instance_parameters )
 
   def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
@@ -86,7 +86,7 @@ class create( ExternalFunction ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.completed, self.in_rollback, self.instance_id, self.interface_list, self.ip_address_map, self.instance_paramaters )
+    return ( self.completed, self.in_rollback, self.instance_id, self.interface_list, self.ip_address_map, self.instance_parameters )
 
   def __setstate__( self, state ):
     self.completed = state[0]
@@ -94,7 +94,7 @@ class create( ExternalFunction ):
     self.instance_id = state[2]
     self.interface_list = state[3]
     self.ip_address_map = state[4]
-    self.instance_paramaters = state[5]
+    self.instance_parameters = state[5]
 
 
 # other functions used by the aws foundation
@@ -219,14 +219,14 @@ class set_interface_macs():
       try:
         iface = self.foundation.networkinterface_set.get( name=interface[ 'name' ] )
       except ObjectDoesNotExist:
-        raise ParamaterError( 'interface_list', 'interface named "{0}" not found'.format( interface[ 'name' ] ) )
+        raise ParameterError( 'interface_list', 'interface named "{0}" not found'.format( interface[ 'name' ] ) )
 
       iface.mac = interface[ 'mac' ]
 
       try:
         iface.full_clean()
       except ValidationError as e:
-        raise ParamaterError( 'interface_list', 'Error saving interface "{0}": {1}'.format( interface[ 'name' ], e ) )
+        raise ParameterError( 'interface_list', 'Error saving interface "{0}": {1}'.format( interface[ 'name' ], e ) )
 
       iface.save()
 
@@ -242,7 +242,7 @@ class set_ip_addresses():
       try:
         addr = Address.objects.get( networked=self.foundation.structure, interface_name=interface )
       except ObjectDoesNotExist:
-        raise ParamaterError( 'ip_address_map', 'Address for interface "{0}" does not exist'.format( interface ) )
+        raise ParameterError( 'ip_address_map', 'Address for interface "{0}" does not exist'.format( interface ) )
 
       addr.offset = address_offset
       addr.address_block = address_block
@@ -250,7 +250,7 @@ class set_ip_addresses():
       try:
         addr.full_clean()
       except ValidationError as e:
-        raise ParamaterError( 'ip_address_map', 'Error Saving ip Address "{0}": {1}'.format( interface, e ) )
+        raise ParameterError( 'ip_address_map', 'Error Saving ip Address "{0}": {1}'.format( interface, e ) )
 
       addr.save()
 

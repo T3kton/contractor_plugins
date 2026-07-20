@@ -40,7 +40,7 @@ class VirtualBoxComplex( Complex ):
     return 'VirtualBox'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     if self.virtualbox_password == '_VAULT_':
       creds = self.virtualbox_username
 
@@ -167,7 +167,7 @@ class VirtualBoxFoundation( Foundation ):
   def complex( self ):
     return self.virtualbox_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return VirtualBoxFoundation.objects.filter( site=site )

@@ -1,4 +1,4 @@
-from contractor.tscript.runner import ExternalFunction, ParamaterError
+from contractor.tscript.runner import ExternalFunction, ParameterError
 
 
 class execute( ExternalFunction ):
@@ -35,7 +35,7 @@ class execute( ExternalFunction ):
       try:
         setattr( self, name, parms[ name ] )
       except KeyError:
-        raise ParamaterError( name, 'required' )
+        raise ParameterError( name, 'required' )
 
     for name in ( 'username', 'password' ):
       try:
@@ -47,7 +47,7 @@ class execute( ExternalFunction ):
       try:
         setattr( self, name, int( parms[ name ] ) )
       except ValueError:
-        raise ParamaterError( name, 'must be valid integer' )
+        raise ParameterError( name, 'must be valid integer' )
       except KeyError:
         pass
 
@@ -100,7 +100,7 @@ class file( ExternalFunction ):
       try:
         setattr( self, name, parms[ name ] )
       except KeyError:
-        raise ParamaterError( name, 'required' )
+        raise ParameterError( name, 'required' )
 
   def toSubcontractor( self ):
     return ( 'file', { 'host': self.host, 'username': self.username, 'password': self.password, 'source': self.source, 'destination': self.destination } )

@@ -66,7 +66,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
     return 'IPMI'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     if self.ipmi_password == '_VAULT_':
       creds = self.ipmi_username
 
@@ -85,7 +85,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
   def class_list( self ):
     return [ 'Physical', 'IPMI' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return IPMIFoundation.objects.filter( site=site )
