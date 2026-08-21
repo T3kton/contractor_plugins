@@ -87,6 +87,10 @@ class create( ExternalFunction ):
     if self.vm_parameters[ 'memory_size' ] > 1048510 or self.vm_parameters[ 'memory_size' ] < 512:  # in MiB
       raise ParameterError( 'memory_size', 'must be from 512 to 1048510' )
 
+    self.vm_parameters[ 'console_type' ] = vm_spec[ 'console_type' ]
+    if self.vm_parameters[ 'console_type' ] not in ( 'serial', 'spice' ):
+      raise ParameterError( 'console_type', 'must be serial or spice')
+
     try:
       self.vm_parameters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
     except KeyError as e:
@@ -94,12 +98,6 @@ class create( ExternalFunction ):
 
     if not NAME_REGEX.match( self.vm_parameters[ 'name' ] ):
       raise ParameterError( '<internal>', 'invalid vm name' )
-
-    # for key in ( 'libvirt_domain_type', ):
-    #   try:
-    #     self.vm_parameters[ key[ 8: ] ] = vm_spec[ key ]
-    #   except KeyError:
-    #     pass
 
   def toSubcontractor( self ):
     print( f'to subcontractor Rollback "{self.in_rollback}"')

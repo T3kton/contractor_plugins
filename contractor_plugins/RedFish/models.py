@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from cinp.orm_django import DjangoCInP as CInP
 
 from contractor.Site.models import Site
-from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
+from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST, CONSOLE_PORT_CHOICES
 from contractor.Survey.models import Plot
 # from contractor.Utilities.models import RealNetworkInterface, Networked
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
@@ -19,7 +19,7 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.RedFish.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class RedFishFoundation( Foundation ):  # , Networked ):
-  SOL_PORT_CHOICES = ( 'console', 'ttyS0', 'ttyS1', 'ttyS2', 'ttyS3' )
+  SOL_PORT_CHOICES = CONSOLE_PORT_CHOICES
   redfish_username = models.CharField( max_length=50 )
   redfish_password = models.CharField( max_length=50 )
   # redfish_interface = models.ForeignKey( RealNetworkInterface )
