@@ -1,6 +1,6 @@
 import json
 
-from contractor.tscript.runner import ExternalFunction, ParamaterError
+from contractor.tscript.runner import ExternalFunction, ParameterError
 from contractor.lib.config import getConfig
 
 
@@ -100,19 +100,19 @@ class apply( ExternalFunction ):
     try:
       foundation = self.getScriptValue( 'foundation', 'foundation' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
 
     structure = foundation.structure
 
     try:
       attribute = parms[ 'attribute' ]
     except KeyError:
-      raise ParamaterError( 'attribute', 'required' )
+      raise ParameterError( 'attribute', 'required' )
 
     try:
       auth_key = parms[ 'auth_key' ]
     except KeyError:
-      raise ParamaterError( 'auth_key', 'required' )
+      raise ParameterError( 'auth_key', 'required' )
 
     self.command_list = _buildCommandList( attribute, foundation, structure )
     self.host = structure.primary_ip.ip_address

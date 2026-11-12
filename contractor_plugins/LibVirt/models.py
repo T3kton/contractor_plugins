@@ -38,7 +38,7 @@ class LibVirtComplex( Complex ):
     return 'LibVirt'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     return { 'host': self.members.get().primary_address.ip_address }
 
   def newFoundation( self, hostname, site ):
@@ -83,8 +83,7 @@ def _vmSpec( foundation ):
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )  # in MiB
   result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )  # in GiB
-
-  # result[ 'libvirt_domain_type' ] = structure_config.get( 'libvirt_domain_type', 'qemu' )
+  result[ 'console_type' ] = foundation.libvirt_console_type
 
   return result
 
@@ -95,8 +94,10 @@ class LibVirtFoundation( Foundation ):
   Foundation for use with LibVirtComplex.  Foundation instances are tracked
   by the LibVirt UUID.
   """
+  CONSOLE_TYPE_CHOICES = ( 'spice', 'serial' )
   libvirt_complex = models.ForeignKey( LibVirtComplex, on_delete=models.PROTECT )
   libvirt_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of libvvirt hosts
+  libvirt_console_type = models.CharField( max_length=6, choices=[ ( i, i ) for i in CONSOLE_TYPE_CHOICES ], default='serial' )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -132,6 +133,13 @@ class LibVirtFoundation( Foundation ):
     return result
 
   @property
+  def console( self ):
+    if self.libvirt_console_type == 'spice':
+      return 'console'
+
+    return 'ttyS0'  # <console type='pty'/> is the guest's first serial port
+
+  @property
   def subclass( self ):
     return self
 
@@ -147,7 +155,7 @@ class LibVirtFoundation( Foundation ):
   def complex( self ):
     return self.libvirt_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return LibVirtFoundation.objects.filter( site=site )

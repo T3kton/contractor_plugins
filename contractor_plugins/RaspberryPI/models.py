@@ -22,7 +22,7 @@ class RaspberryPiFoundation( Foundation ):
   def class_list( self ):
     return [ 'Metal', 'Manual', 'RaspberryPi' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return RaspberryPiFoundation.objects.filter( site=site )

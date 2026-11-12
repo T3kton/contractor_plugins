@@ -88,7 +88,7 @@ class ManualFoundation( Foundation ):
   def class_list( self ):
     return [ 'Metal', 'VM', 'Container', 'Switch', 'Manual' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return ManualFoundation.objects.filter( site=site )
@@ -131,7 +131,7 @@ class ManualComplexedFoundation( Foundation ):
   def complex( self ):
     return self.complex_host
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return ManualComplexedFoundation.objects.filter( site=site )

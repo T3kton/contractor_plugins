@@ -58,7 +58,7 @@ class AMTFoundation( Foundation ):  # , Networked ):
     return 'AMT'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     if self.amt_password == '_VAULT_':
       creds = self.amt_username
 
@@ -76,7 +76,7 @@ class AMTFoundation( Foundation ):  # , Networked ):
   def class_list( self ):
     return [ 'Physical', 'AMT' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return AMTFoundation.objects.filter( site=site )

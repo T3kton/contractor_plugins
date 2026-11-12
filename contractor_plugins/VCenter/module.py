@@ -2,7 +2,7 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
-from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause, ExecutionError
+from contractor.tscript.runner import ExternalFunction, ParameterError, Pause, ExecutionError
 
 NAME_REGEX = re.compile( r'^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
@@ -16,8 +16,8 @@ class create( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = None
     self.in_rollback = False
-    self.connection_paramaters = {}
-    self.vm_paramaters = {}
+    self.connection_parameters = {}
+    self.vm_parameters = {}
 
   @property
   def done( self ):
@@ -45,70 +45,70 @@ class create( ExternalFunction ):
     try:
       foundation = self.getScriptValue( 'foundation', 'foundation' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
 
     try:
       vcenter_complex = self.getScriptValue( 'foundation', 'vcenter_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_complex.connection_paramaters
+    self.connection_parameters = vcenter_complex.connection_parameters
 
-    self.vm_paramaters = {}
+    self.vm_parameters = {}
 
-    self.vm_paramaters[ 'datacenter' ] = vcenter_complex.vcenter_datacenter
-    self.vm_paramaters[ 'cluster' ] = vcenter_complex.vcenter_cluster
+    self.vm_parameters[ 'datacenter' ] = vcenter_complex.vcenter_datacenter
+    self.vm_parameters[ 'cluster' ] = vcenter_complex.vcenter_cluster
 
     try:
-      self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
+      self.vm_parameters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
     except KeyError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
-    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
+    if not NAME_REGEX.match( self.vm_parameters[ 'name' ] ):
+      raise ParameterError( 'invalid name' )
 
     for key in ( 'host', 'datastore' ):
       try:
-        self.vm_paramaters[ key ] = parms[ key ]
+        self.vm_parameters[ key ] = parms[ key ]
       except KeyError:
-        raise ParamaterError( key, 'required' )
+        raise ParameterError( key, 'required' )
 
     try:
       vm_spec = parms[ 'vm_spec' ]
     except KeyError:
-      raise ParamaterError( 'vm_spec', 'required' )
+      raise ParameterError( 'vm_spec', 'required' )
 
     if not isinstance( vm_spec, dict ):
-      raise ParamaterError( 'vm_spec', 'must be a dict' )
+      raise ParameterError( 'vm_spec', 'must be a dict' )
 
     # for now we will cary on CPU, Memeory, for OVAs evntually something will pull this info from the OVA
     for key in ( 'cpu_count', 'memory_size' ):
       try:
-        self.vm_paramaters[ key ] = int( vm_spec[ key ] )
+        self.vm_parameters[ key ] = int( vm_spec[ key ] )
       except KeyError:
-        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'required' )
+        raise ParameterError( 'vm_spec.{0}'.format( key ), 'required' )
       except ( ValueError, TypeError ):
-        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
+        raise ParameterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
-      raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
-    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MiB
-      raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
+    if self.vm_parameters[ 'cpu_count' ] > 64 or self.vm_parameters[ 'cpu_count' ] < 1:
+      raise ParameterError( 'cpu_count', 'must be from 1 to 64')
+    if self.vm_parameters[ 'memory_size' ] > 1048510 or self.vm_parameters[ 'memory_size' ] < 512:  # in MiB
+      raise ParameterError( 'memory_size', 'must be from 512 to 1048510' )
 
     # is this an OVA, if so, short cut, just deploy it
     ova = vm_spec.get( 'ova', None )
     if ova is not None:
-      self.vm_paramaters[ 'ova' ] = ova
-      self.vm_paramaters[ 'boot_order' ] = [ 'hdd' ]
+      self.vm_parameters[ 'ova' ] = ova
+      self.vm_parameters[ 'boot_order' ] = [ 'hdd' ]
 
       try:
-        self.vm_paramaters[ 'disk_provisioning' ] = vm_spec[ 'disk_provisioning' ]
+        self.vm_parameters[ 'disk_provisioning' ] = vm_spec[ 'disk_provisioning' ]
       except KeyError:
         pass
 
       for key in ( 'vcenter_property_map', 'vcenter_deployment_option', 'vcenter_ip_protocol' ):
         try:
-          self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+          self.vm_parameters[ key[ 8: ] ] = vm_spec[ key ]
         except KeyError:
           pass
 
@@ -116,18 +116,18 @@ class create( ExternalFunction ):
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
         interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name } )
 
-      self.vm_paramaters[ 'interface_list' ] = interface_list
+      self.vm_parameters[ 'interface_list' ] = interface_list
       return
 
     # is this an template deploy, if so, short cut, just deploy it
     template = vm_spec.get( 'template', None )
     if template is not None:
-      self.vm_paramaters[ 'template' ] = template
-      self.vm_paramaters[ 'boot_order' ] = [ 'hdd' ]
+      self.vm_parameters[ 'template' ] = template
+      self.vm_parameters[ 'boot_order' ] = [ 'hdd' ]
 
       for key in ( 'vcenter_hostname', 'vcenter_domain', 'vcenter_dnsserver_list', 'vcenter_dnssuffix_list', 'vcenter_property_map' ):
         try:
-          self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+          self.vm_parameters[ key[ 8: ] ] = vm_spec[ key ]
         except KeyError:
           pass
 
@@ -142,7 +142,7 @@ class create( ExternalFunction ):
           item[ 'gateway' ] = address[ 'gateway' ]
         interface_list.append( item )
 
-      self.vm_paramaters[ 'interface_list' ] = interface_list
+      self.vm_parameters[ 'interface_list' ] = interface_list
       return
 
     # not OVA/Template do scratch
@@ -158,29 +158,29 @@ class create( ExternalFunction ):
     try:
       disk_size = int( vm_spec.get( 'disk_size', 10 ) )
     except ( ValueError, TypeError ):
-      raise ParamaterError( 'vm_spec.disk_size', 'must be number' )
+      raise ParameterError( 'vm_spec.disk_size', 'must be number' )
     if disk_size > 10240 or disk_size < 2:  # in GiB
-      raise ParamaterError( 'disk_size', 'must be from 2 to 10240' )  # is 10 TiB enough?
+      raise ParameterError( 'disk_size', 'must be from 2 to 10240' )  # is 10 TiB enough?
 
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': disk_size, 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in GiB, see _createDisk in subcontractor_plugsin/vcenter/lib.py
-    self.vm_paramaters[ 'interface_list' ] = interface_list
-    self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
+    self.vm_parameters[ 'disk_list' ] = [ { 'size': disk_size, 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in GiB, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+    self.vm_parameters[ 'interface_list' ] = interface_list
+    self.vm_parameters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
 
     if False:  # boot from iso instead
-      self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
-      self.vm_paramaters[ 'boot_order' ] = [ 'cd', 'net', 'hdd' ]
+      self.vm_parameters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
+      self.vm_parameters[ 'boot_order' ] = [ 'cd', 'net', 'hdd' ]
 
     for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage', 'vcenter_virtual_vhv', 'vcenter_property_map' ):
       try:
-        self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+        self.vm_parameters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
         pass
 
   def toSubcontractor( self ):
     if self.in_rollback:
-      return ( 'create_rollback', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
+      return ( 'create_rollback', { 'connection': self.connection_parameters, 'vm': self.vm_parameters } )
     else:
-      return ( 'create', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
+      return ( 'create', { 'connection': self.connection_parameters, 'vm': self.vm_parameters } )
 
   def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
@@ -195,11 +195,11 @@ class create( ExternalFunction ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.vm_paramaters, self.in_rollback, self.uuid )
+    return ( self.connection_parameters, self.vm_parameters, self.in_rollback, self.uuid )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
-    self.vm_paramaters = state[1]
+    self.connection_parameters = state[0]
+    self.vm_parameters = state[1]
     self.in_rollback = state[2]
     self.uuid = state[3]
 
@@ -208,7 +208,7 @@ class host_list( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.host_list = None
-    self.connection_paramaters = {}
+    self.connection_parameters = {}
     self.datacenter = None
     self.cluster = None
     self.min_memory = None
@@ -234,9 +234,9 @@ class host_list( ExternalFunction ):
     try:
       vcenter_complex = self.getScriptValue( 'foundation', 'vcenter_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_complex.connection_paramaters
+    self.connection_parameters = vcenter_complex.connection_parameters
     self.datacenter = vcenter_complex.vcenter_datacenter
     self.cluster = vcenter_complex.vcenter_cluster
 
@@ -244,27 +244,27 @@ class host_list( ExternalFunction ):
       try:
         setattr( self, key, int( parms[ key ] ) )
       except KeyError:
-        raise ParamaterError( key, 'required' )
+        raise ParameterError( key, 'required' )
       except ( ValueError, TypeError ):
-        raise ParamaterError( key, 'must be an integer' )
+        raise ParameterError( key, 'must be an integer' )
 
     for key in ( 'cpu_scaler', 'memory_scaler' ):
       try:
         setattr( self, key, int( parms.get( key, 1 ) ) )
       except ( ValueError, TypeError ):
-        raise ParamaterError( key, 'must be an integer' )
+        raise ParameterError( key, 'must be an integer' )
 
   def toSubcontractor( self ):
-    return ( 'host_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'min_memory': self.min_memory, 'min_cpu': self.min_cpu, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
+    return ( 'host_list', { 'connection': self.connection_parameters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'min_memory': self.min_memory, 'min_cpu': self.min_cpu, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
 
   def fromSubcontractor( self, data ):
     self.host_list = data[ 'host_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.min_memory, self.min_cpu, self.cpu_scaler, self.memory_scaler, self.host_list )
+    return ( self.connection_parameters, self.datacenter, self.cluster, self.min_memory, self.min_cpu, self.cpu_scaler, self.memory_scaler, self.host_list )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.datacenter = state[1]
     self.cluster = state[2]
     self.min_memory = state[3]
@@ -278,7 +278,7 @@ class create_datastore( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.complete = False
-    self.connection_paramaters = {}
+    self.connection_parameters = {}
     self.datacenter = None
     self.datastore_list = None
 
@@ -297,37 +297,37 @@ class create_datastore( ExternalFunction ):
     try:
       vcenter_complex = self.getScriptValue( 'foundation', 'vcenter_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_complex.connection_paramaters
+    self.connection_parameters = vcenter_complex.connection_parameters
     self.datacenter = vcenter_complex.vcenter_datacenter
 
     try:
       self.host = self.getScriptValue( 'config', 'vcenter_hostname' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_hostname: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation vcenter_hostname: {0}'.format( e ) )
 
     try:
       self.name = parms[ 'name' ]
     except AttributeError:
-      raise ParamaterError( 'name', 'required' )
+      raise ParameterError( 'name', 'required' )
 
     try:
       self.model = parms[ 'model' ]
     except AttributeError:
-      raise ParamaterError( 'model', 'required' )
+      raise ParameterError( 'model', 'required' )
 
   def toSubcontractor( self ):
-    return ( 'create_datastore', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'host': self.host, 'name': self.name, 'model': self.model } )
+    return ( 'create_datastore', { 'connection': self.connection_parameters, 'datacenter': self.datacenter, 'host': self.host, 'name': self.name, 'model': self.model } )
 
   def fromSubcontractor( self, data ):
     self.complete = data.get( 'done', False )
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.host, self.name, self.model, self.complete )
+    return ( self.connection_parameters, self.datacenter, self.host, self.name, self.model, self.complete )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.datacenter = state[1]
     self.host = state[2]
     self.name = state[3]
@@ -339,7 +339,7 @@ class datastore_list( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.datastore_list = None
-    self.connection_paramaters = {}
+    self.connection_parameters = {}
     self.datacenter = None
     self.cluster = None
     self.host = None
@@ -365,37 +365,37 @@ class datastore_list( ExternalFunction ):
     try:
       vcenter_complex = self.getScriptValue( 'foundation', 'vcenter_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_complex.connection_paramaters
+    self.connection_parameters = vcenter_complex.connection_parameters
     self.datacenter = vcenter_complex.vcenter_datacenter
     self.cluster = vcenter_complex.vcenter_cluster
 
     try:
       self.host = parms.get( 'host' )
     except AttributeError:
-      raise ParamaterError( 'host', 'Required' )
+      raise ParameterError( 'host', 'Required' )
 
     try:
       self.min_free_space = int( parms.get( 'min_free_space' ) )  # in GB
     except KeyError:
-      raise ParamaterError( 'min_free_space', 'required' )
+      raise ParameterError( 'min_free_space', 'required' )
     except ( ValueError, TypeError ):
-      raise ParamaterError( 'min_free_space', 'must be an integer' )
+      raise ParameterError( 'min_free_space', 'must be an integer' )
 
     self.name_regex = parms.get( 'name_regex', None )
 
   def toSubcontractor( self ):
-    return ( 'datastore_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'min_free_space': self.min_free_space, 'name_regex': self.name_regex } )
+    return ( 'datastore_list', { 'connection': self.connection_parameters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'min_free_space': self.min_free_space, 'name_regex': self.name_regex } )
 
   def fromSubcontractor( self, data ):
     self.datastore_list = data[ 'datastore_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.min_free_space, self.datastore_list )
+    return ( self.connection_parameters, self.datacenter, self.cluster, self.host, self.name_regex, self.min_free_space, self.datastore_list )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.datacenter = state[1]
     self.cluster = state[2]
     self.host = state[3]
@@ -408,7 +408,7 @@ class network_list( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.network_list = None
-    self.connection_paramaters = {}
+    self.connection_parameters = {}
     self.datacenter = None
     self.cluster = None
     self.host = None
@@ -434,30 +434,30 @@ class network_list( ExternalFunction ):
     try:
       vcenter_complex = self.getScriptValue( 'foundation', 'vcenter_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
+      raise ParameterError( '<internal>', 'Unable to get Foundation vcenter_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_complex.connection_paramaters
+    self.connection_parameters = vcenter_complex.connection_parameters
     self.datacenter = vcenter_complex.vcenter_datacenter
     self.cluster = vcenter_complex.vcenter_cluster
 
     try:
       self.host = parms.get( 'host' )
     except AttributeError:
-      raise ParamaterError( 'host', 'Required' )
+      raise ParameterError( 'host', 'Required' )
 
     self.name_regex = parms.get( 'name_regex', None )
 
   def toSubcontractor( self ):
-    return ( 'network_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'name_regex': self.name_regex } )
+    return ( 'network_list', { 'connection': self.connection_parameters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'name_regex': self.name_regex } )
 
   def fromSubcontractor( self, data ):
     self.network_list = data[ 'network_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.network_list )
+    return ( self.connection_parameters, self.datacenter, self.cluster, self.host, self.name_regex, self.network_list )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.datacenter = state[1]
     self.cluster = state[2]
     self.host = state[3]
@@ -471,7 +471,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.complete = None
 
   @property
@@ -486,16 +486,16 @@ class destroy( ExternalFunction ):
       return 'Waiting for VM Destruction'
 
   def toSubcontractor( self ):
-    return ( 'destroy', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
+    return ( 'destroy', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.complete = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.complete )
+    return ( self.connection_parameters, self.uuid, self.name, self.complete )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.complete = state[3]
@@ -506,7 +506,7 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -530,18 +530,18 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
   def toSubcontractor( self ):
     self.counter += 1
     if self.desired_state == 'off' and self.counter < 3:  # the first two times, do it nicely, after that, the hard way
-      return ( 'set_power', { 'state': 'soft_off', 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
+      return ( 'set_power', { 'state': 'soft_off', 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name } )
     else:
-      return ( 'set_power', { 'state': self.desired_state, 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
+      return ( 'set_power', { 'state': self.desired_state, 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.desired_state, self.curent_state, self.counter )
+    return ( self.connection_parameters, self.uuid, self.name, self.desired_state, self.curent_state, self.counter )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.desired_state = state[3]
@@ -554,7 +554,7 @@ class power_state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.state = None
 
   @property
@@ -573,16 +573,16 @@ class power_state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
+    return ( 'power_state', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.state )
+    return ( self.connection_parameters, self.uuid, self.name, self.state )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.state = state[3]
@@ -593,7 +593,7 @@ class wait_for_poweroff( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.current_state = None
 
   @property
@@ -605,16 +605,16 @@ class wait_for_poweroff( ExternalFunction ):
     return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
+    return ( 'power_state', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.current_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.current_state )
+    return ( self.connection_parameters, self.uuid, self.name, self.current_state )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.current_state = state[3]
@@ -626,7 +626,7 @@ class get_interface_map( ExternalFunction ):
     self.foundation = foundation
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.interface_list = None
 
   @property
@@ -654,17 +654,17 @@ class get_interface_map( ExternalFunction ):
     return result
 
   def toSubcontractor( self ):
-    return ( 'get_interface_map', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
+    return ( 'get_interface_map', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.interface_list = data[ 'interface_list' ]
 
   def __getstate__( self ):
-    return ( self.foundation, self.connection_paramaters, self.uuid, self.name, self.interface_list )
+    return ( self.foundation, self.connection_parameters, self.uuid, self.name, self.interface_list )
 
   def __setstate__( self, state ):
     self.foundation = state[0]
-    self.connection_paramaters = state[1]
+    self.connection_parameters = state[1]
     self.uuid = state[2]
     self.name = state[3]
     self.interface_list = state[4]
@@ -680,14 +680,14 @@ class set_interface_macs():
       try:
         iface = self.foundation.networkinterface_set.get( physical_location=physical_location )
       except ObjectDoesNotExist:
-        raise ParamaterError( 'interface_map', 'interface at "{0}" not found'.format( physical_location ) )
+        raise ParameterError( 'interface_map', 'interface at "{0}" not found'.format( physical_location ) )
 
       iface.mac = interface_map[ physical_location ]
 
       try:
         iface.full_clean()
       except ValidationError as e:
-        raise ParamaterError( 'interface_map', 'Error saving interface "{0}": {1}'.format( physical_location, e ) )
+        raise ParameterError( 'interface_map', 'Error saving interface "{0}": {1}'.format( physical_location, e ) )
 
       iface.save()
 
@@ -697,7 +697,7 @@ class execute( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.username = None
     self.password = None
     self.dir = '/'
@@ -723,7 +723,7 @@ class execute( ExternalFunction ):
       try:
         setattr( self, name, parms[ name ] )
       except KeyError:
-        raise ParamaterError( name, 'required' )
+        raise ParameterError( name, 'required' )
 
       try:
         self.dir = parms[ 'dir' ]
@@ -734,7 +734,7 @@ class execute( ExternalFunction ):
         try:
           setattr( self, name, int( parms[ name ] ) )
         except ValueError:
-          raise ParamaterError( name, 'must be valid integer' )
+          raise ParameterError( name, 'must be valid integer' )
         except KeyError:
           pass
 
@@ -751,17 +751,17 @@ class execute( ExternalFunction ):
   def toSubcontractor( self ):
     program = '/bin/sh'
     args = '-c "{0}"'.format( self.command )
-    return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': program, 'args': args, 'dir': self.dir, 'timeout': self.timeout } )
+    return ( 'execute', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': program, 'args': args, 'dir': self.dir, 'timeout': self.timeout } )
 
   def fromSubcontractor( self, data ):
     self.rc = data.get( 'rc', None )
     self.error = data.get( 'error', None )
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc, self.error )
+    return ( self.connection_parameters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc, self.error )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.username = state[3]
@@ -778,7 +778,7 @@ class mark_as_template( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.as_template = None
     self.complete = None
 
@@ -797,21 +797,21 @@ class mark_as_template( ExternalFunction ):
     try:
       self.as_template = bool( parms.get( 'as_template', True ) )
     except ValueError:
-      raise ParamaterError( 'as_template', 'must be boolean' )
+      raise ParameterError( 'as_template', 'must be boolean' )
     except KeyError:
       pass
 
   def toSubcontractor( self ):
-    return ( 'mark_as_template', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'as_template': self.as_template } )
+    return ( 'mark_as_template', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name, 'as_template': self.as_template } )
 
   def fromSubcontractor( self, data ):
     self.complete = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.as_template, self.complete )
+    return ( self.connection_parameters, self.uuid, self.name, self.as_template, self.complete )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.as_template = state[3]
@@ -823,7 +823,7 @@ class export( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.connection_parameters = foundation.vcenter_complex.connection_parameters
     self.url = None
     self.location = None
 
@@ -842,23 +842,23 @@ class export( ExternalFunction ):
     try:
       self.url = parms.get( 'url' )
     except KeyError:
-      raise ParamaterError( 'url', 'required' )
+      raise ParameterError( 'url', 'required' )
 
   @property
   def value( self ):
     return self.handle
 
   def toSubcontractor( self ):
-    return ( 'export', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'url': self.url } )
+    return ( 'export', { 'connection': self.connection_parameters, 'uuid': self.uuid, 'name': self.name, 'url': self.url } )
 
   def fromSubcontractor( self, data ):
     self.location = data[ 'location' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.url, self.location )
+    return ( self.connection_parameters, self.uuid, self.name, self.url, self.location )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
+    self.connection_parameters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.url = state[3]

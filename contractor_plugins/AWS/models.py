@@ -69,7 +69,7 @@ class AWSEC2Foundation( Foundation ):
   def class_list( self ):
     return [ 'AWSEC2' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return AWSEC2Foundation.objects.filter( site=site )

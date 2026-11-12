@@ -44,7 +44,7 @@ class AzureComplex( Complex ):
     return 'Azure'
 
   @property
-  def connection_paramaters( self ):
+  def connection_parameters( self ):
     return {
               'subscription_id': self.azure_subscription_id,
               'client_id': self.azure_client_id,
@@ -173,7 +173,7 @@ class AzureFoundation( Foundation ):
   def class_list( self ):
     return [ 'VM', 'Azure' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return AzureFoundation.objects.filter( site=site )

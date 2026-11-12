@@ -91,7 +91,7 @@ class TestFoundation( Foundation ):
   def class_list( self ):
     return [ 'Metal', 'VM', 'Container', 'Switch', 'Manual', 'Test' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return TestFoundation.objects.filter( site=site )
@@ -134,7 +134,7 @@ class TestComplexedFoundation( Foundation ):
   def complex( self ):
     return self.complex_host
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
+  @cinp.list_filter( name='site', parameter_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return TestComplexedFoundation.objects.filter( site=site )
